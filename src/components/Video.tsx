@@ -1,23 +1,78 @@
+import { DefaultUi, Player, Youtube } from "@vime/react";
 import { CaretRight, DiscordLogo, FileArrowDown, Lightning } from "phosphor-react";
+import { gql, useQuery } from "@apollo/client";
 
-export function Video() {
+import '@vime/core/themes/default.css';
+
+const GET_LESSON_BY_SLUG_QUERY = gql`
+    query GetLessonByQuery($slug: String) {
+        lesson(where: {slug: $slug}) {
+            title
+            videoId
+            description
+            teacher {
+            bio
+            avatarURL
+            name
+            }
+        }
+    }
+`
+interface GetLessonByQueryResponse {
+    lesson: {
+        title: string;
+        videoId: string;
+        description: string;
+        teacher: {
+            bio: string;
+            avatarURL: string;
+            name: string;
+        }
+    }
+}
+
+interface videoProps{
+    lessonSlug: string;
+}
+
+
+export function Video(props: videoProps) {
+    const { data } = useQuery<GetLessonByQueryResponse>(GET_LESSON_BY_SLUG_QUERY, {
+        variables: {
+            slug: props.lessonSlug,
+        }
+    })
+
+    if(!data){
+        return(
+            <div className="flex-1">
+                <p>Loading...</p>
+            </div>
+        )
+    }
+
     return(
         <div className="flex-1">
             <div className="bg-black flex justify-center">
-                <div className="h-full w-full max-w-[1100px] max-h-[60vh] aspect-video"></div>
+                <div className="h-full w-full max-w-[1100px] max-h-[60vh] aspect-video">
+                    <Player>
+                        <Youtube videoId={data.lesson.videoId} />
+                        <DefaultUi />
+                    </Player>
+                </div>
             </div>
 
             <div className="p-8 max-w-[1100px] mx-auto">
                 <div className="flex items-start gap-16">
                     <div className="flex-1">
-                        <h1 className="text-2xl font-bold">Aula 1 - Abertura do lançamento</h1>
-                        <p className="mt-4 text-gray-200 leading-relaxed">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Ducimus tempora, temporibus ab qui enim sequi quisquam doloribus odio, id adipisci natus? Tenetur reprehenderit vero explicabo at, nobis obcaecati sunt quos?</p>
+                        <h1 className="text-2xl font-bold">{data.lesson.title}</h1>
+                        <p className="mt-4 text-gray-200 leading-relaxed">{data.lesson.description}</p>
 
                         <div className="flex items-center gap-4 mt-6">
-                            <img src="https://github.com/contatoAcelera.png" alt="Professor" className="h-16 w-16 rounded-full border-1 border-blue-500"/>
+                            <img src={data.lesson.teacher.avatarURL} alt="Professor" className="h-16 w-16 rounded-full border-1 border-blue-500"/>
                             <div className="leading-relaxed">
-                                <strong className="font-bold text-2xl block">Contato Acelera</strong>
-                                <span className="text-gray-200">CEO Acelera XYZ</span>
+                                <strong className="font-bold text-2xl block">{data.lesson.teacher.name}</strong>
+                                <span className="text-gray-200">{data.lesson.teacher.bio}</span>
                             </div>
                         </div>
                     </div>
